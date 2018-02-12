@@ -1,0 +1,7 @@
+.cabal-sandbox
+cabal.sandbox.config
+dist
+.corectl
+.ghc
+.env
+gen
