@@ -1,51 +1,55 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Quote (
-    Quote (..)
-  , quote
-  , readQuotes
+    quote
+
+  , QuoteError (..)
+  , renderQuoteError
   ) where
 
-import qualified Data.List as List
 import           Data.Text (Text)
 import qualified Data.Text as Text
-import qualified Data.Text.IO as Text
 
 import qualified Network.Linklater as Linklater
+import qualified Network.Linklater.Types as Linklater
 
 import           System.IO (IO)
-import qualified System.IO as IO
-import qualified System.Random.MWC as Random
 
+import           Quote.Data
 import           Quote.Prelude
+import           Quote.Store (Store (..), StoreError (..))
+import qualified Quote.Store as Store
 
-newtype Quote =
-  Quote {
-      getQuote :: Text
-    } deriving (Eq, Ord, Show)
+data QuoteError =
+    QuoteStoreError StoreError
+  | QuoteSayError Linklater.RequestError
+    deriving (Show)
 
-readQuotes :: IO.FilePath -> IO [Quote]
-readQuotes path = do
-  content <- Text.readFile path
-  pure $ Quote <$> Text.splitOn "\n" content
+renderQuoteError :: QuoteError -> Text
+renderQuoteError err =
+  case err of
+    QuoteStoreError e ->
+      mconcat ["Store error / ", Store.renderStoreError e]
+    QuoteSayError e ->
+      mconcat ["Request error / ", Text.pack . show $ e]
 
-quote :: [Quote] -> Linklater.Config -> Linklater.Command -> IO Text
-quote quotes config (Linklater.Command _name _user channel _text) = do
-  q <- Random.withSystemRandom $ \gen -> do
-    n <- (Random.uniformR (0, length quotes - 2) gen) :: IO Int
-    pure $ List.head . List.drop n $ quotes
-  let
-    message =
-      Linklater.SimpleMessage
-        (Linklater.EmojiIcon ":8ball:")
-        "quotes"
-        channel
-        ("> " <> getQuote q)
 
-  e <- runEitherT $ Linklater.say message config
-  case e of
-    Left err -> do
-      IO.print err
-    Right _ -> do
-      pure ()
-  pure ""
+
+quote :: Store -> Linklater.Config -> Linklater.Command -> EitherT QuoteError IO Text
+quote store config (Linklater.Command name _user channel _text) = do
+  case name of
+    "quote" -> do
+      q <- firstEitherT QuoteStoreError $
+        Store.random store
+      let
+        message =
+          Linklater.SimpleMessage
+            (Linklater.EmojiIcon ":8ball:")
+            "quotes"
+            channel
+            (mconcat ["> ", fromMaybe "There really should be a witty quote here, but I couldn't find one for some reason - quotebot" $ getQuote <$> q])
+      firstEitherT QuoteSayError $
+        Linklater.say message config
+      pure ""
+    _ ->
+      pure "usage: /quote"
