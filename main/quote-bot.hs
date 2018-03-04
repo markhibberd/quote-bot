@@ -5,7 +5,6 @@ import           Control.Monad.IO.Class (MonadIO (..))
 
 import qualified Data.IORef as IORef
 import qualified Data.Map as Map
-import           Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 
@@ -21,6 +20,7 @@ import qualified Traction.Control as Traction
 
 import qualified Quote
 import           Quote.Data
+import qualified Quote.Linklater as Linklater
 import           Quote.Prelude
 import           Quote.Store (Store (..))
 import qualified Quote.Store as Store
@@ -39,8 +39,8 @@ main = do
       Text.hPutStrLn IO.stderr $ Store.renderStoreError err
       Exit.exitFailure
   IO.putStrLn ("[quote-bot] listening on port: " <> show port)
-  Warp.run port (Linklater.slashSimple . wrap $
-    Quote.quote store (Linklater.Config hook))
+  Warp.run port $ (Linklater.slashMessage . wrap $
+    (Quote.quote store (Linklater.Config hook)))
 
 bootstrap :: MonadIO m => Nest.Parser m Store
 bootstrap =
@@ -62,11 +62,17 @@ file = do
   fmap MemoryStore . liftIO . IORef.newIORef $
     Quote <$> Text.splitOn "\n" content
 
-wrap :: (a -> EitherT Quote.QuoteError IO Text) -> a -> IO Text
-wrap f a =
+wrap :: (Linklater.Command -> EitherT Quote.QuoteError IO Linklater.ResponseMessage) -> Linklater.Command -> IO Linklater.ResponseMessage
+wrap f a@(Linklater.Command _ _ channel _) =
   runEitherT (f a) >>= \e -> case e of
     Left err -> do
       Text.putStrLn . Quote.renderQuoteError $ err
-      pure $ Quote.renderQuoteError $ err
+      pure $
+        Linklater.ResponseSimpleMessage
+          (Linklater.EmojiIcon ":8ball:")
+          "quotes"
+          channel
+          Linklater.Ephemeral
+          (Quote.renderQuoteError err)
     Right t ->
       pure t
