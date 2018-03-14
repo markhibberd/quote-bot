@@ -17,6 +17,9 @@ ENV LANG C.UTF-8
 RUN apt-get update && \
   apt-get install -y \
     libgmp-dev \
-    libz-dev
+    libz-dev \
+    postgresql \
+    postgresql-client \
+    libpq-dev
 
 COPY --from=builder /build/dist/build/quote-bot/quote-bot /usr/bin/quote-bot
