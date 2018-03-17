@@ -12,7 +12,6 @@ import           System.IO (IO)
 
 import           Quote.Prelude
 
-
 prop_example :: Property
 prop_example = property $ do
   value <- forAll $ Gen.int (Range.constant 0 999999)
@@ -20,5 +19,4 @@ prop_example = property $ do
 
 tests :: IO Bool
 tests =
-  pure True
---  checkParallel $$(discover)
+  checkParallel $$(discover)

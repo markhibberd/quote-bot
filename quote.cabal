@@ -4,7 +4,7 @@ license: BSD3
 author: Mark Hibberd <mark@hibberd.id.au>
 maintainer: Mark Hibberd <mark@hibberd.id.au>
 copyright: (c) 2018 Mark Hibberd
-cabal-version: >= 1.24
+cabal-version: >= 1.22
 build-type: Custom
 description:
   Slack quote bot.
@@ -13,13 +13,18 @@ library
   default-language: Haskell2010
 
   build-depends:
-      base >= 3 && < 5
+      aeson == 1.*
+    , base >= 3 && < 5
     , bytestring == 0.10.*
     , containers >= 0.5 && < 0.7
     , linklater == 4.0.*
+    , http-types == 0.12.*
     , mwc-random == 0.13.*
     , text == 1.2.*
+    , traction == 0.*
     , transformers == 0.5.*
+    , wai
+
     , Cabal == 1.24.*
 
   ghc-options:
@@ -30,8 +35,14 @@ library
 
   exposed-modules:
     Quote
+    Quote.Data
     Quote.EitherT
+    Quote.Linklater
     Quote.Prelude
+    Quote.Store
+    Quote.Store.Postgres
+    Quote.Store.Memory
+
 
 
 executable quote-bot
@@ -49,12 +60,36 @@ executable quote-bot
 
   build-depends:
       base
-    , nest == 0.*
+    , containers
     , linklater == 4.0.*
+    , nest == 0.*
     , text
+    , traction
     , transformers
     , quote
+    , wai
     , warp == 3.*
+
+
+executable quote-loader
+  default-language: Haskell2010
+
+  ghc-options:
+                    -Wall -threaded -O2
+                    -rtsopts -with-rtsopts "-T -N"
+
+  hs-source-dirs:
+                    gen
+
+  main-is:
+                    ../main/quote-loader.hs
+
+  build-depends:
+      base
+    , nest == 0.*
+    , text
+    , traction
+    , quote
 
 test-suite test
   default-language: Haskell2010
@@ -66,7 +101,9 @@ test-suite test
     , bytestring
     , containers
     , hedgehog == 0.5.*
+    , mmorph
     , text
+    , traction
     , quote
 
   ghc-options:
