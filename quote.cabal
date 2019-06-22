@@ -25,8 +25,6 @@ library
     , transformers == 0.5.*
     , wai
 
-    , Cabal == 1.24.*
-
   ghc-options:
     -Wall
 
@@ -42,7 +40,6 @@ library
     Quote.Store
     Quote.Store.Postgres
     Quote.Store.Memory
-
 
 
 executable quote-bot
@@ -110,3 +107,7 @@ test-suite test
     -Wall
     -threaded
     -O2
+
+  other-modules:
+    Test.Quote
+    Test.Quote.Store.Postgres
