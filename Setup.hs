@@ -13,6 +13,11 @@ import           Distribution.Simple.PackageIndex
 import           Distribution.Simple.Utils (createDirectoryIfMissingVerbose, rewriteFile, rawSystemStdout)
 import           Distribution.Verbosity
 
+#if __GLASGOW_HASKELL__ <= 710
+-- GHC 7.10 and earlier do not support the MIN_VERSION_Cabal macro.
+#define MIN_VERSION_Cabal(a,b,c) 0
+#endif
+
 #if MIN_VERSION_Cabal(2,0,0)
 import           Distribution.Types.PackageName (PackageName, unPackageName)
 import           Distribution.Simple.BuildPaths (autogenPackageModulesDir)
@@ -78,8 +83,6 @@ genBuildInfo verbosity pkg = do
     , "buildInfo = RuntimeBuildInfo \"" ++ v ++ "\" \"" ++ t ++ "\" \"" ++ gv ++ "\""
     , "buildInfoVersion :: String"
     , "buildInfoVersion = \"" ++ buildVersion ++ "\""
-    , "cabalVersion :: String"
-    , "cabalVersion = \"" ++ VERSION_Cabal ++ "\""
     ]
   rewriteFile targetText buildVersion
 
