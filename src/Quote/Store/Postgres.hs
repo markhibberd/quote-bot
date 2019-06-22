@@ -11,7 +11,7 @@ module Quote.Store.Postgres (
 
 import           Traction.Control
 import           Traction.Migration (Migration (..))
-import           Traction.Sql (sql)
+import           Traction.QQ (sql)
 import qualified Traction.Migration as Traction
 import qualified Traction.Sql as Traction
 

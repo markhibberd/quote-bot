@@ -98,8 +98,9 @@ test-suite test
       base >= 3 && < 5
     , bytestring
     , containers
-    , hedgehog == 0.5.*
+    , hedgehog == 0.6.*
     , mmorph
+    , nest
     , text
     , traction
     , quote

@@ -7,12 +7,17 @@ module Test.Quote.Store.Postgres where
 import           Control.Monad.IO.Class (MonadIO (..))
 import           Control.Monad.Morph (hoist, lift)
 
+import           Data.ByteString (ByteString)
+
 import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 
+import qualified Nest
+
 import           System.IO (IO)
 
-import           Traction.Control
+import           Traction.Control (Db, DbPool)
+import qualified Traction.Control as Traction
 
 import           Quote.Data
 import           Quote.Prelude
@@ -34,7 +39,7 @@ prop_db = property $ do
 db :: Db a -> PropertyT IO a
 db x = do
   pool <- mkPool
-  evalExceptT . hoist lift . testDb pool $ Postgres.initialise >> x
+  evalExceptT . hoist lift . Traction.runDb pool $ Postgres.initialise >> x
 
 checkDb :: MonadIO m => Group -> m Bool
 checkDb group =
@@ -44,7 +49,15 @@ checkDb group =
 
 mkPool :: MonadIO m => m DbPool
 mkPool =
-  liftIO $ newPool "dbname=quote_test host=localhost user=quote_test password=quote_test port=5432"
+  liftIO $
+    dbconfig >>= Traction.newRollbackPool
+
+dbconfig :: IO ByteString
+dbconfig = do
+  Nest.force $
+    Nest.string "DB_TEST"
+      `Nest.withDefault`
+        "dbname=quote_test host=localhost user=quote_test password=quote_test port=5432"
 
 tests :: IO Bool
 tests =
