@@ -1,3 +1,0 @@
-[submodule "lib/traction"]
-	path = lib/traction
-	url = git@github.com:markhibberd/traction
